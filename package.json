@@ -1,0 +1,25 @@
+{
+  "name": "bamizon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "customer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JessiBramwell/Bamizon.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JessiBramwell/Bamizon/issues"
+  },
+  "homepage": "https://github.com/JessiBramwell/Bamizon#readme",
+  "dependencies": {
+    "dotenv": "^7.0.0",
+    "faker": "^4.1.0",
+    "inquirer": "^6.3.1",
+    "mysql": "^2.17.1"
+  }
+}
