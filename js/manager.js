@@ -1,17 +1,24 @@
 require('dotenv').config();
-const mysql = require('mysql');
 const inquirer = require('inquirer');
 const prompt = require('./prompt');
 const faker = require('faker');
+// const connection = require('./connection');
+const mysql = require('mysql');
+const Table = require('cli-table');
 
-var connection = mysql.createConnection({
+const connection = mysql.createConnection({
   host: 'localhost',
   port: 3306,
   user: 'root',
   password: 'root',
   database: 'bamazon_db',
 });
-// viewOptions()
+
+connection.connect(function (err) {
+  if (err) throw err;
+  console.log("connected as id " + connection.threadId + "\n");
+  viewOptions()
+});
 
 function viewOptions() {
   inquirer.prompt([prompt.manager.menu]).then((res) => {
@@ -30,7 +37,7 @@ function viewOptions() {
         break;
 
       case 'Add New Product':
-        newProduct();
+        addProduct();
         break;
 
       case 'Exit':
@@ -49,12 +56,12 @@ function displayInventory() {
 }
 
 function lowInventory() {
-  connection.query('SELECT * FROM products WHERE stock_quantity < 5000', (err, res) => {
+  connection.query('SELECT * FROM products WHERE stock_quantity < 5', (err, res) => {
     if (err) throw err;
     if (res) {
       display(res);
       inquirer.prompt([prompt.manager.add]).then((res) => {
-        if(res.order_inventory) {
+        if (res.order_inventory) {
           addInventory();
         } else {
           viewOptions();
@@ -69,7 +76,7 @@ function lowInventory() {
 function addInventory() {
   inquirer.prompt(prompt.order).then((answer) => {
     connection.query(
-      'SELECT * FROM products WHERE ?', 
+      'SELECT * FROM products WHERE ?',
       {
         item_id: answer.ID
       },
@@ -89,53 +96,76 @@ function addInventory() {
             if (err) throw err;
             console.log('Order successful!');
             display(res);
-            console.log('Inventory update pending delivery.\n');            
+            console.log('Inventory update pending delivery.\n');
             viewOptions();
           });
       });
   });
 }
-newProduct()
-function newProduct() {
+
+function addProduct() {
+
   let product_name = faker.commerce.productName();
   prompt.manager.product_confirm.message = `Adding ${product_name}`
-  
-  connection.query('SELECT department_name FROM departments', (err, res) => {
-    var department_name;
-    res.foreEach((item) => {
-      console.log(item.department_name)
-    }); 
-  }, 
-  function (err) {
-    if (err) throw err;
-  });
 
-  inquirer.prompt(prompt.manager.product).then((res) => {
+  listDepartments()
 
+  inquirer.prompt(prompt.manager.product_confirm).then((res) => {
     if (res.confirm_product) {
-      connection.query('INSERT INTO products SET ?',
-        {
-          product_name: product_name,
-          department_name: department_name,
-          price: res.product_price,
-          stock_quantity: res.product_quantity,
-          product_sales: 0
-        },
-        function (err) {
-          if (err) throw err;
-          console.log(`${product_name} added`)
-          // display()
-          viewOptions()
-        });
+
+      inquirer.prompt(prompt.manager.product).then((res) => {
+
+        connection.query('INSERT INTO products SET ?',
+          {
+            product_name: product_name,
+            department_name: res.department_name,
+            price: res.product_price,
+            stock_quantity: res.product_quantity,
+            product_sales: 0
+          },
+          function (err) {
+            if (err) throw err;
+            console.log(`${product_name} added`)
+            // display()
+            viewOptions()
+          });
+      });
+
     } else {
       viewOptions();
     }
   });
 }
 
-// THIS IS REPEATED FOR EVERY JS PAGE
-function display(res) {
-  res.forEach((item) => {
-    console.log(`ID ${item.item_id} $${item.price} ${item.product_name} | ${item.department_name} | ${item.stock_quantity}\n`);
+function listDepartments() {
+  connection.query('SELECT department_name FROM departments', (err, res) => {
+
+    if (err) throw err;
+    res.forEach((item) => {
+      prompt.manager.product[0].choices.push(item.department_name)
+    });
+    return prompt.manager.product[0].choices
   });
+}
+
+// THIS IS REPEATED FOR EVERY JS PAGE
+// function display(res) {
+//   res.forEach((item) => {
+//     console.log(`ID ${item.item_id} $${item.price} ${item.product_name} | ${item.department_name} | ${item.stock_quantity}\n`);
+//   });
+// }
+function display(res) {
+  var table = new Table({
+    head: ['ID', 'Price', 'Product', 'Department', 'Stock'],
+  })
+  res.forEach((item) => {
+    table.push([
+      item.item_id,
+      item.price,
+      item.product_name,
+      item.department_name,
+      item.stock_quantity
+    ]);
+  });
+  console.log(table.toString());
 }
