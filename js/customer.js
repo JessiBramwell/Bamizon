@@ -1,17 +1,11 @@
 require('dotenv').config();
 const inquirer = require('inquirer');
 const prompt = require('./prompt');
-// const connection = require('./connection');
 const mysql = require('mysql');
 const Table = require('cli-table');
+const auth = require('./auth.js')
 
-const connection = mysql.createConnection({
-  host: 'localhost',
-  port: 3306,
-  user: 'root',
-  password: 'root',
-  database: 'bamazon_db',
-});
+const connection = mysql.createConnection(auth)
 
 connection.connect(function (err) {
   if (err) throw err;
@@ -19,22 +13,6 @@ connection.connect(function (err) {
   viewOptions()
   listDepartments()
 });
-
-function display(res) {
-  var table = new Table({
-    head: ['ID', 'Price', 'Product', 'Department', 'Stock'],
-  })
-  res.forEach((item) => {
-    table.push([
-      item.item_id,
-      item.price,
-      item.product_name,
-      item.department_name,
-      item.stock_quantity
-    ]);
-  });
-  console.log(table.toString());
-}
 
 function viewOptions() {
   inquirer.prompt([prompt.customer.menu]).then((res) => {
@@ -60,6 +38,7 @@ function viewOptions() {
 }
 
 function displayInventory() {
+
   connection.query(
     "SELECT * FROM products", (err, res) => {
 
@@ -71,18 +50,20 @@ function displayInventory() {
 
 function searchDepartment() {
   inquirer.prompt(prompt.customer.search).then((res) => {
-    console.log(res.department_name)
+
     connection.query(
       'SELECT * FROM products WHERE ?', {
         department_name: res.department_name
       }, (err, res) => {
         if (err) throw err;
         display(res);
+        viewOptions()
       });
   });
 }
 
 function listDepartments() {
+  
   connection.query(
     'SELECT DISTINCT department_name FROM products', (err, res) => {
 
@@ -120,7 +101,7 @@ function orderItem() {
 
             function (err) {
               if (err) throw err;
-              console.log("Order successful! \nYour total was $" + total);
+              console.log("\n Order successful! Total: $" + total + "\n");
               viewOptions();
             });
 
@@ -130,4 +111,21 @@ function orderItem() {
         }
       });
   });
+}
+
+function display(res) {
+  
+  var table = new Table({
+    head: ['ID', 'Price', 'Product', 'Department', 'Stock'],
+  })
+  res.forEach((item) => {
+    table.push([
+      item.item_id,
+      '$' + item.price,
+      item.product_name,
+      item.department_name,
+      item.stock_quantity
+    ]);
+  });
+  console.log(table.toString());
 }

@@ -90,12 +90,12 @@ const supervisor = {
     message: 'Options:',
     name: 'options'
   },
-  department: [{
+  confirm: {
     type: 'confirm',
     message: '',
     name: 'confirm_department'
   },
-  {
+  overhead: {
     type: 'input',
     message: 'Overhead Cost:',
     name: 'over_head_cost',
@@ -105,7 +105,7 @@ const supervisor = {
       }
       return false;
     }
-  }]
+  }
 }
 
 module.exports = {

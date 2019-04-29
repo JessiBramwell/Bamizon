@@ -2,17 +2,11 @@ require('dotenv').config();
 const inquirer = require('inquirer');
 const prompt = require('./prompt');
 const faker = require('faker');
-// const connection = require('./connection');
+const auth = require('./auth.js')
 const mysql = require('mysql');
 const Table = require('cli-table');
 
-const connection = mysql.createConnection({
-  host: 'localhost',
-  port: 3306,
-  user: 'root',
-  password: 'root',
-  database: 'bamazon_db',
-});
+const connection = mysql.createConnection(auth)
 
 connection.connect(function (err) {
   if (err) throw err;
@@ -61,7 +55,7 @@ function lowInventory() {
     if (res) {
       display(res);
       inquirer.prompt([prompt.manager.add]).then((res) => {
-        if (res.order_inventory) {
+        if (res.order) {
           addInventory();
         } else {
           viewOptions();
@@ -95,8 +89,6 @@ function addInventory() {
           function (err) {
             if (err) throw err;
             console.log('Order successful!');
-            display(res);
-            console.log('Inventory update pending delivery.\n');
             viewOptions();
           });
       });
@@ -126,7 +118,6 @@ function addProduct() {
           function (err) {
             if (err) throw err;
             console.log(`${product_name} added`)
-            // display()
             viewOptions()
           });
       });
@@ -148,20 +139,14 @@ function listDepartments() {
   });
 }
 
-// THIS IS REPEATED FOR EVERY JS PAGE
-// function display(res) {
-//   res.forEach((item) => {
-//     console.log(`ID ${item.item_id} $${item.price} ${item.product_name} | ${item.department_name} | ${item.stock_quantity}\n`);
-//   });
-// }
 function display(res) {
   var table = new Table({
     head: ['ID', 'Price', 'Product', 'Department', 'Stock'],
-  })
+  });
   res.forEach((item) => {
     table.push([
       item.item_id,
-      item.price,
+      '$' + item.price,
       item.product_name,
       item.department_name,
       item.stock_quantity
